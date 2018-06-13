@@ -9,16 +9,18 @@ public class FPTree {
 
     private FPTreeNode tree;
     private Map<String,FPTreeNode> headerTable;
-    private int minSuport,minConfidence;
+    private double minSuport,minConfidence;
+    private int minCount;
     private int datasize;
 
     public FPTree() {
     }
 
-    public FPTree(int minSuport, int minConfidence,int datasize) {
+    public FPTree(double minSuport, double minConfidence, int datasize) {
         this.minSuport = minSuport;
         this.minConfidence = minConfidence;
         this.datasize = datasize;
+        this.minCount = (int) (datasize*minSuport);
     }
 
     public FPTreeNode getTree() {
@@ -37,19 +39,19 @@ public class FPTree {
         this.headerTable = headerTable;
     }
 
-    public int getMinSuport() {
+    public double getMinSuport() {
         return minSuport;
     }
 
-    public void setMinSuport(int minSuport) {
+    public void setMinSuport(double minSuport) {
         this.minSuport = minSuport;
     }
 
-    public int getMinConfidence() {
+    public double getMinConfidence() {
         return minConfidence;
     }
 
-    public void setMinConfidence(int minConfidence) {
+    public void setMinConfidence(double minConfidence) {
         this.minConfidence = minConfidence;
     }
 
@@ -59,5 +61,13 @@ public class FPTree {
 
     public void setDatasize(int datasize) {
         this.datasize = datasize;
+    }
+
+    public int getMinCount() {
+        return minCount;
+    }
+
+    public void setMinCount(int minCount) {
+        this.minCount = minCount;
     }
 }

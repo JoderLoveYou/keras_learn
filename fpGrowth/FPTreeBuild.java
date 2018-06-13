@@ -8,8 +8,8 @@ import java.util.*;
 public class FPTreeBuild {
 
     private DataSet datasets;
-    private int minSuport;
-    private int minConfidence;
+    private double minSuport;
+    private double minConfidence;
 
     public FPTreeBuild addDataSet(DataSet datasets){
         this.datasets = datasets;
@@ -17,25 +17,11 @@ public class FPTreeBuild {
     }
 
     public FPTreeBuild addMinSuport(double minSuport){
-        if (datasets==null)throw new RuntimeException("没设置dataset");
-        int size = datasets.size();
-        addMinSuport((int)minSuport*size);
-        return this;
-    }
-
-    public FPTreeBuild addMinSuport(int minSuport){
         this.minSuport = minSuport;
         return this;
     }
 
     public FPTreeBuild addMinConfidence(double minConfidence){
-        if (datasets==null)throw new RuntimeException("没设置dataset");
-        int size = datasets.size();
-        addMinConfidence((int)minConfidence*size);
-        return this;
-    }
-
-    public FPTreeBuild addMinConfidence(int minConfidence){
         this.minConfidence = minConfidence;
         return this;
     }
@@ -56,7 +42,7 @@ public class FPTreeBuild {
         Iterator<Map.Entry<String,FPTreeNode>> it = fpTree.getHeaderTable().entrySet().iterator();
         while (it.hasNext()){
             FPTreeNode node = it.next().getValue();
-            if (node.getCount()<minSuport||node.getCount()<minConfidence){
+            if (node.getCount()<fpTree.getMinCount()){
                 it.remove();
             }
         }
@@ -81,12 +67,6 @@ public class FPTreeBuild {
 
     public FPTree createTree(DataSet datasets,
                              double minSuport,double minConfidence){
-        return addDataSet(datasets).addMinSuport(minSuport).
-                addMinConfidence(minConfidence).build();
-    }
-
-    public FPTree createTree(DataSet datasets,
-                             int minSuport,int minConfidence){
         return addDataSet(datasets).addMinSuport(minSuport).
                 addMinConfidence(minConfidence).build();
     }
@@ -148,7 +128,7 @@ public class FPTreeBuild {
     public ResultSet mineTree(FPTree fpTree){
         List<String> preFix = new ArrayList<>();
         List<List> freqItemList = new ArrayList<>();
-        ResultSet resultSet = new ResultSet();
+        ResultSet resultSet = new ResultSet(fpTree.getMinSuport(),fpTree.getMinConfidence());
         mineTree(fpTree,preFix,freqItemList,resultSet,fpTree.getDatasize());
         return resultSet;
     }
@@ -161,21 +141,20 @@ public class FPTreeBuild {
         }
         Arrays.sort(arr);
         for (i=arr.length-1;i>=0;i--){
-            List<String> newFreqSet = new ArrayList<>(preFix);
-            newFreqSet.add(arr[i].getName());
-            freqItemList.add(newFreqSet);
-            DataSet condPattBases = findPrefixPath(fpTree,arr[i].getName());
             int count = fpTree.getHeaderTable().get(arr[i].getName()).getCount();
             double support = (count*1.)/datasize;
             double parentSupport = resultSet.getParentSupport(preFix);
             ResultItem resultItem = new ResultItem(preFix,arr[i].getName(),
                     parentSupport<=0?1.:support/parentSupport,support);
-//            System.out.println(resultItem);
-            resultSet.add(resultItem);
-            FPTree tree = createTree(condPattBases, fpTree.getMinSuport(),fpTree.getMinConfidence());
-            if (tree != null){
-                mineTree(tree,newFreqSet, freqItemList,resultSet,datasize);
-                tree = null;//todo
+            if (resultSet.add(resultItem)){
+                List<String> newFreqSet = new ArrayList<>(preFix);
+                newFreqSet.add(arr[i].getName());
+                freqItemList.add(newFreqSet);
+                DataSet condPattBases = findPrefixPath(fpTree, arr[i].getName());
+                FPTree tree = createTree(condPattBases, fpTree.getMinSuport(), fpTree.getMinConfidence());
+                if (tree != null) {
+                    mineTree(tree, newFreqSet, freqItemList, resultSet, datasize);
+                }
             }
         }
     }

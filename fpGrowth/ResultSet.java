@@ -10,14 +10,25 @@ public class ResultSet implements Iterable {
 
     private List<ResultItem> result;
     private Map<String,Integer> index;
+    private double minSupport,minConfidence;
     public ResultSet() {
         result = new ArrayList<>();
         index = new HashMap<>();
     }
 
-    public void add(ResultItem item){
-        result.add(item);
-        index.put(item.getString(),result.size()-1);
+    public ResultSet(double minSupport,double minConfidence) {
+        this();
+        this.minConfidence = minConfidence;
+        this.minSupport = minSupport;
+    }
+
+    public boolean add(ResultItem item){
+        if (item.getSupport()>=minSupport&&item.getConfidence()>=minConfidence){
+            result.add(item);
+            index.put(item.getString(),result.size()-1);
+            return true;
+        }
+        return false;
     }
 
     public int indexOf(String[] list){
@@ -56,6 +67,23 @@ public class ResultSet implements Iterable {
         return this;
     }
 
+    /**
+     * 过滤小于置信度和支持度
+     * @param confidence
+     * @param support
+     * @return
+     */
+    public ResultSet filter(double confidence,double support,boolean flag){
+        result = result.stream()
+                .filter(x->x.getConfidence()>=confidence && x.getSupport()>=support)
+                .collect(Collectors.toList());
+        if (flag){
+            index = new HashMap<>();
+            for (int i=0;i<result.size();i++)index.put(result.get(i).getString(),i);
+        }
+        return this;
+    }
+
     public ResultItem get(int index){
         return result.get(index);
     }
@@ -63,6 +91,14 @@ public class ResultSet implements Iterable {
     public double getParentSupport(List<String> parentList){
         int index = indexOf(parentList);
         return index!=-1?get(index).getSupport():-1.;
+    }
+
+    public List<ResultItem> get(Set<String> set){
+        List<ResultItem> result = this.result.stream()
+                .filter(x->set.containsAll(x.getPrefix())&&!set.contains(x.getSuffix()))
+                .collect(Collectors.toList());
+        return result;
+
     }
 
     @Override
@@ -77,5 +113,13 @@ public class ResultSet implements Iterable {
         return "ResultSet{" +
                 "result=\n" + sb.toString() +
                 '}';
+    }
+
+    public void print(){
+        System.out.println("ResultSet{");
+        for (ResultItem item:result){
+            System.out.println(item);
+        }
+        System.out.println("}");
     }
 }
